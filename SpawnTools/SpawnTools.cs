@@ -17,6 +17,7 @@ public partial class SpawnTools : BasePlugin
 
     private string _configPath = "";
     private bool _wasHotReload = false;
+    private bool _created = false;
 
     private Config? _config;
 
@@ -32,9 +33,12 @@ public partial class SpawnTools : BasePlugin
 
     private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        Logger.LogInformation($"Round started with {_config?.SpawnPoints.Count ?? 0} spawn point!");
-
         _spawnModel?.Clear();
+
+        if (_created)
+            return HookResult.Continue;
+
+        Logger.LogInformation($"Round started with {_config?.SpawnPoints.Count ?? 0} spawn point!");
 
         var noVel = new Vector(0f, 0f, 0f);
         var spawn = 0;
@@ -61,19 +65,19 @@ public partial class SpawnTools : BasePlugin
 
             if (entity == null)
             {
-                Server.PrintToChatAll("It's null");
+                //Server.PrintToChatAll("It's null");
                 continue;
             }
 
             entity.Teleport(pos, new QAngle(angle.X, angle.Y, angle.Z), noVel);
             entity.UniqueHammerID = "42069";
             entity.DispatchSpawn();
-            Server.PrintToChatAll("Did it");
+            //Server.PrintToChatAll("Did it");
             spawn++;
         }
 
         Logger.LogInformation("Created a total of {0} out of {1}", spawn, _config.SpawnPoints.Count);
-        
+        _created = true;
         return HookResult.Continue;
     }
 }

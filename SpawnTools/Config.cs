@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,7 @@ namespace SpawnTools;
 public partial class SpawnTools {
     private void OnMapStart(string mapName)
     {
+        _created = false;
         _config = new();
         _configPath =
             Path.Combine(ModuleDirectory, $"../../configs/plugins/spawntools/{Server.MapName.ToLower()}.json");
@@ -33,7 +35,6 @@ public partial class SpawnTools {
 
         if (_wasHotReload)
         {
-            OnRoundStart(null!, null!);
             _wasHotReload = false;
         }
     }
