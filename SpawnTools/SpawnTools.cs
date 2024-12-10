@@ -16,7 +16,6 @@ public partial class SpawnTools : BasePlugin
     public override string ModuleDescription { get; } = "Allows you to dynamically create spawn points per map";
 
     private string _configPath = "";
-
     private bool _wasHotReload = false;
 
     private Config? _config;
@@ -25,19 +24,7 @@ public partial class SpawnTools : BasePlugin
     {
         RegisterEventHandler<EventRoundStart>(OnRoundStart);
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
-        RegisterListener<Listeners.OnEntitySpawned>(entity =>
-        {
-            Server.NextFrame(()=>{
-                if (_config?.DeletedSpawns.Count == 0) return;
-                if(entity.Entity is null) return;
-                if (entity is not SpawnPoint) return;
-                var e2 = entity.Entity.As<CBaseEntity>();
-                
-                if(!_config!.DeletedSpawns.Contains(e2.UniqueHammerID)) return;
-                
-                Server.NextFrame(e2.Remove);
-            });       
-        });
+
         _wasHotReload = hotReload;
         if(hotReload)
             OnMapStart(Server.MapName);
@@ -45,32 +32,47 @@ public partial class SpawnTools : BasePlugin
 
     private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        Console.WriteLine($"Round started {_config?.SpawnPoints.Count ?? 0}");
+        Logger.LogInformation($"Round started with {_config?.SpawnPoints.Count ?? 0} spawn point!");
+
+        _spawnModel?.Clear();
+
         var noVel = new Vector(0f, 0f, 0f);
         var spawn = 0;
-        if (_config?.SpawnPoints == null) return HookResult.Continue;
-        Task.Run(async () => {
-            foreach (var spawnPoint in _config?.SpawnPoints!)
+
+        if (_config?.SpawnPoints == null)
+        {
+            Logger.LogInformation($"It's null!");
+            return HookResult.Continue;
+        }
+
+        foreach (var spawnPoint in _config?.SpawnPoints!)
+        {
+            var angleString = StringToVector(spawnPoint.Angle!);
+            var angle = new QAngle(angleString.X, angleString.Y, angleString.Z);
+            var pos = StringToVector(spawnPoint.Origin!);
+
+            SpawnPoint? entity;
+
+            if (spawnPoint.Team == CsTeam.Terrorist)
+                entity = Utilities.CreateEntityByName<CInfoPlayerTerrorist>("info_player_terrorist");
+
+            else
+                entity = Utilities.CreateEntityByName<CInfoPlayerCounterterrorist>("info_player_counterterrorist");
+
+            if (entity == null)
             {
-                SpawnPoint? entity;
-                if(spawnPoint.Team == CsTeam.Terrorist)
-                    entity = Utilities.CreateEntityByName<CInfoPlayerTerrorist>("info_player_terrorist");
-                else
-                    entity = Utilities.CreateEntityByName<CInfoPlayerCounterterrorist>("info_player_counterterrorist");
-                if (entity == null) continue;
-                var angle = StringToVector(spawnPoint.Angle);
-                entity.Teleport(
-                    NormalVectorToValve(StringToVector(spawnPoint.Origin)),
-                    new QAngle(angle.X, angle.Y, angle.Z),
-                    noVel);
-                entity.UniqueHammerID = "42069";
-                entity.DispatchSpawn();
-                spawn++;
-                await Task.Delay(5);
+                Server.PrintToChatAll("It's null");
+                continue;
             }
-            Logger.LogInformation(
-                $"Created a total of {spawn} out of {_config.SpawnPoints.Count}");
-        });
+
+            entity.Teleport(pos, new QAngle(angle.X, angle.Y, angle.Z), noVel);
+            entity.UniqueHammerID = "42069";
+            entity.DispatchSpawn();
+            Server.PrintToChatAll("Did it");
+            spawn++;
+        }
+
+        Logger.LogInformation("Created a total of {0} out of {1}", spawn, _config.SpawnPoints.Count);
         
         return HookResult.Continue;
     }

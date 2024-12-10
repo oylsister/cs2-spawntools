@@ -17,14 +17,16 @@ public partial class SpawnTools
         return $"{vec.X}|{vec.Y}|{vec.Z}";
     }
 
-    private static Vector3 StringToVector(string str)
+    private static Vector StringToVector(string str)
     {
         var explode = str.Split("|");
-        return new Vector3(x: float.Parse(explode[0]), y: float.Parse(explode[1]), z: float.Parse(explode[2]));
+        return new Vector(x: float.Parse(explode[0]), y: float.Parse(explode[1]), z: float.Parse(explode[2]));
     }
 
+    /*
     private static Vector NormalVectorToValve(Vector3 v)
     {
         return new Vector(v.X, v.Y, v.Z);
     }
+    */
 }
